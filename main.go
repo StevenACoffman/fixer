@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/StevenACoffman/fixer/linters"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/multichecker"
 	"golang.org/x/tools/go/analysis/passes/fieldalignment"
@@ -57,6 +58,12 @@ import (
 
 func main() {
 
+	var runKhan bool
+	for _, a := range os.Args[1:] {
+		if strings.HasPrefix(a, "-khan") {
+			runKhan = true
+		}
+	}
 	// Most of these linters do NOT have suggested fixes BTW.
 	var checks = []*analysis.Analyzer{
 		// All cmd/vet analyzers.
@@ -100,9 +107,12 @@ func main() {
 		err113.NewAnalyzer(),
 		exportloopref.Analyzer,
 		exhaustive.Analyzer,
-		// ruleguard.Analyzer,
+		// ruleguard.Analyzer, // requires a dsl file
 	}
-
+	if runKhan {
+		checks = append(checks, linters.ErrorsWrapStacktraceAnalyzer)
+		checks = append(checks, linters.LinewrapAnalyzer)
+	}
 	config.DefaultConfig.Initialisms = append(config.DefaultConfig.Initialisms, "ISO")
 
 	// Most of staticcheck.
