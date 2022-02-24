@@ -30,6 +30,7 @@ func _hasEqualMethod(obj types.Object) bool {
 	}
 
 	sig, ok := method.Type().(*types.Signature)
+
 	return ok &&
 		sig.Results().Len() == 1 &&
 		sig.Results().At(0).String() == "var  bool"
@@ -41,6 +42,7 @@ func _hasBeforeMethod(obj types.Object) bool {
 		return false
 	}
 	sig, ok := method.Type().(*types.Signature)
+
 	return ok &&
 		sig.Results().Len() == 1 &&
 		sig.Results().At(0).String() == "var  bool"
@@ -52,6 +54,7 @@ func _hasAfterMethod(obj types.Object) bool {
 		return false
 	}
 	sig, ok := method.Type().(*types.Signature)
+
 	return ok &&
 		sig.Results().Len() == 1 &&
 		sig.Results().At(0).String() == "var  bool"
@@ -59,10 +62,16 @@ func _hasAfterMethod(obj types.Object) bool {
 
 func _checkIsPointer(pass *analysis.Pass, left types.Object, right types.Object, pos token.Pos) {
 	if _, isLeftPointer := left.Type().(*types.Pointer); isLeftPointer {
-		pass.Reportf(pos, "Left hand side is a pointer. You probably don't intend to be comparing that")
+		pass.Reportf(
+			pos,
+			"Left hand side is a pointer. You probably don't intend to be comparing that",
+		)
 	}
 	if _, isRightPointer := right.Type().(*types.Pointer); isRightPointer {
-		pass.Reportf(pos, "Right hand side is a pointer. You probably don't intend to be comparing that")
+		pass.Reportf(
+			pos,
+			"Right hand side is a pointer. You probably don't intend to be comparing that",
+		)
 	}
 }
 
@@ -113,8 +122,10 @@ func _runCompareLint(pass *analysis.Pass) (interface{}, error) {
 			if op, ok := n.(*ast.BinaryExpr); ok {
 				_checkBinaryExpression(pass, op)
 			}
+
 			return true
 		})
 	}
+
 	return nil, nil
 }

@@ -45,6 +45,7 @@ func _runErrorsWrap(pass *analysis.Pass) (interface{}, error) {
 				pass.Reportf(call.Pos(),
 					"errors.KhanWrap() should have an odd number of arguments, not %v",
 					len(call.Args))
+
 				return true
 			}
 
@@ -53,11 +54,14 @@ func _runErrorsWrap(pass *analysis.Pass) (interface{}, error) {
 				argLit, ok := call.Args[i].(*ast.BasicLit)
 				if !ok || argLit.Kind != token.STRING {
 					argType := pass.TypesInfo.TypeOf(call.Args[i])
-					pass.Reportf(call.Args[i].Pos(),
+					pass.Reportf(
+						call.Args[i].Pos(),
 						"errors.KhanWrap() should use string-literals as keys, but arg %v has type %v",
 						// TODO(csilvers): extract and use _shortTypeName from
 						// pkg/kacontext/linters/interface_lint.go.
-						i, argType.String())
+						i,
+						argType.String(),
+					)
 				}
 			}
 

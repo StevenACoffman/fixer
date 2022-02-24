@@ -87,6 +87,7 @@ func (f *_file) cacheFile() error {
 		f.lines = strings.Split(f.contents, "\n")
 		f.readLines = true
 	}
+
 	return nil
 }
 
@@ -94,21 +95,23 @@ func (f *_file) cacheFile() error {
 func (f *_file) Range(start, end token.Pos) (string, error) {
 	err := f.cacheFile()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%w", err)
 	}
 	if f.Offset(start) < 0 || f.Offset(start) >= f.Size() {
 		return "", fmt.Errorf(
 			"file doesn't have enough chars size:%d start: %d filename: %s",
 			f.Size(), start, f.Name())
 	}
+
 	return f.contents[f.Offset(start):f.Offset(end)], nil
 }
 
 func (f *_file) NumLines() (int, error) {
 	err := f.cacheFile()
 	if err != nil {
-		return -1, err
+		return -1, fmt.Errorf("%w", err)
 	}
+
 	return len(f.lines), nil
 }
 
@@ -116,13 +119,14 @@ func (f *_file) NumLines() (int, error) {
 func (f *_file) LineText(lineNumber int) (string, error) {
 	err := f.cacheFile()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%w", err)
 	}
 	if lineNumber < 1 || lineNumber-1 >= len(f.lines) {
 		return "", fmt.Errorf(
 			"file doesn't have enough lines, lines: %d lineNumber: %d, fileName %s",
 			len(f.lines), lineNumber, f.Name())
 	}
+
 	return f.lines[lineNumber-1], nil
 }
 
@@ -163,6 +167,7 @@ func _diagnostic(
 		}
 		retval.SuggestedFixes = []analysis.SuggestedFix{suggestedFix}
 	}
+
 	return retval
 }
 
@@ -204,6 +209,7 @@ func _commentPrefix(line string) string {
 		(line[commentStart] == ' ' || line[commentStart] == '\t') {
 		commentStart++
 	}
+
 	return line[:commentStart]
 }
 
@@ -241,6 +247,7 @@ func _shareCommentBlock(line, otherLine string) bool {
 		strings.HasPrefix(strings.TrimLeft(commentText, "0123456789"), ") ") {
 		return false
 	}
+
 	return linePrefix == _commentPrefix(otherLine)
 }
 
@@ -306,9 +313,11 @@ func _getCommentBlockIssue(
 			diagnostic := _diagnostic(
 				file, startLine, startLine+len(lines)-1, startLine+i,
 				replacement, message)
+
 			return []analysis.Diagnostic{diagnostic}
 		}
 	}
+
 	return nil
 }
 
@@ -329,7 +338,7 @@ func _getCommentIssuesForFile(
 		for i := 0; i < len(commentLines); i++ {
 			commentLines[i], err = file.LineText(startLine + i)
 			if err != nil {
-				return diagnostics, err
+				return diagnostics, fmt.Errorf("%w", err)
 			}
 
 			// For end-of-line comments, Go seems to create a one-entry
@@ -338,6 +347,7 @@ func _getCommentIssuesForFile(
 			if len(commentLines) == 1 &&
 				!strings.HasPrefix(strings.TrimSpace(commentLines[0]), "//") {
 				commentLines = nil
+
 				break
 			}
 
@@ -370,6 +380,7 @@ func _getCommentIssuesForFile(
 			diagnostics = append(diagnostics, blockIssues...)
 		}
 	}
+
 	return diagnostics, nil
 }
 
@@ -387,7 +398,7 @@ func _getFuncIssue(
 
 	line, err := file.LineText(startLine)
 	if err != nil {
-		return nil, -1, err
+		return nil, -1, fmt.Errorf("%w", err)
 	}
 
 	lineLen := _lineLength(line, tabSpaces)
@@ -416,7 +427,7 @@ func _getFuncIssue(
 	// params.Pos().
 	firstLine, err := file.Range(funcDecl.Pos(), params.List[0].Pos())
 	if err != nil {
-		return nil, -1, err
+		return nil, -1, fmt.Errorf("%w", err)
 	}
 	newLines := []string{firstLine}
 
@@ -440,13 +451,13 @@ func _getFuncIssue(
 		// before any trailing comments that follow the param.
 		lineText, paramErr := file.Range(paramStart, param.End())
 		if paramErr != nil {
-			return nil, -1, paramErr
+			return nil, -1, fmt.Errorf("%w", paramErr)
 		}
 		lineText += ","
 		if param.End() != paramEnd {
 			commentText, paramErr := file.Range(param.End(), paramEnd)
 			if paramErr != nil {
-				return nil, -1, paramErr
+				return nil, -1, fmt.Errorf("%w", paramErr)
 			}
 			lineText += commentText
 		}
@@ -472,12 +483,13 @@ func _getFuncIssue(
 	}
 	lastLine, err := file.Range(params.Closing, file.Pos(bodyOffset))
 	if err != nil {
-		return nil, -1, err
+		return nil, -1, fmt.Errorf("%w", err)
 	}
 	newLines = append(newLines, lastLine)
 
 	msg := fmt.Sprintf("function line is %d characters", lineLen)
 	diagnostic := _diagnostic(file, startLine, startLine, startLine, newLines, msg)
+
 	return []analysis.Diagnostic{diagnostic}, startLine, nil
 }
 
@@ -500,6 +512,7 @@ func _getFuncIssuesForFile(
 		if thisErr != nil {
 			// We'll ignore this function declaration, but mark its error.
 			err = thisErr
+
 			continue
 		}
 		if lintedLine > -1 {
@@ -508,6 +521,7 @@ func _getFuncIssuesForFile(
 
 		diagnostics = append(diagnostics, funcIssues...)
 	}
+
 	return diagnostics, err
 }
 
@@ -558,6 +572,7 @@ func _findOKRawStrings(file *_file, lintedLines map[int]bool) {
 				lintedLines[lineNum] = true
 			}
 		}
+
 		return true // always recurse
 	})
 }
@@ -572,7 +587,7 @@ func _getLonglineIssuesForFile(
 
 	numLines, err := file.NumLines()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w", err)
 	}
 
 	for i := 1; i <= numLines; i++ {
@@ -582,7 +597,7 @@ func _getLonglineIssuesForFile(
 
 		line, err := file.LineText(i)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w", err)
 		}
 
 		if gexceptionsRegexp.MatchString(line) {
@@ -604,6 +619,7 @@ func _getLonglineIssuesForFile(
 			diagnostics = append(diagnostics, _diagnostic(file, i, i, i, nil, msg))
 		}
 	}
+
 	return diagnostics, nil
 }
 
@@ -618,14 +634,14 @@ func _runLinewrap(pass *analysis.Pass) (interface{}, error) {
 		commentIssues, err := _getCommentIssuesForFile(
 			&file, gmaxCommentLineLen, gtabSpaces, lintedLines)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w", err)
 		}
 		diagnostics = append(diagnostics, commentIssues...)
 
 		funcIssues, err := _getFuncIssuesForFile(
 			&file, gmaxCodeLineLen, gtabSpaces, lintedLines)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w", err)
 		}
 		diagnostics = append(diagnostics, funcIssues...)
 
@@ -638,7 +654,7 @@ func _runLinewrap(pass *analysis.Pass) (interface{}, error) {
 		longlineIssues, err := _getLonglineIssuesForFile(
 			&file, gmaxCodeLineLen, gtabSpaces, lintedLines)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w", err)
 		}
 		diagnostics = append(diagnostics, longlineIssues...)
 

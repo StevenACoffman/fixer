@@ -88,6 +88,7 @@ func _subdirectoryOf(directory string) _filenameFilter {
 				return true
 			}
 		}
+
 		return false
 	}
 }
@@ -101,6 +102,7 @@ func _allOf(filters ..._filenameFilter) _filenameFilter {
 				return false
 			}
 		}
+
 		return true
 	}
 }
@@ -114,6 +116,7 @@ func _anyOf(filters ..._filenameFilter) _filenameFilter {
 				return true
 			}
 		}
+
 		return false
 	}
 }
@@ -121,33 +124,16 @@ func _anyOf(filters ..._filenameFilter) _filenameFilter {
 // This is the only object-filter we need right now.
 func _isFunction(symbolObj types.Object) bool {
 	_, ok := symbolObj.Type().Underlying().(*types.Signature)
+
 	return ok
 }
 
 type _bannedSymbol struct {
-	// name is the fully qualified name of the symbol to ban; see
-	// lintutil.NameOf for accepted syntaxes and supported kinds.  Note that if
-	// this is a type, we only prevent explicit reference to the type, not
-	// reference to a value with that type.  For example, if a type T is
-	// banned, one could still write functionReturningT(), just not T{...} or
-	// func(t T).
-	name string
-	// nameRegexp is an alternative to name -- you can specify one or
-	// the other but not both.  It is useful when name isn't fixed.
-	nameRegexp *regexp.Regexp
-	// message is the full error message we will report, like
-	// like "Don't use fmt.Errorf, use pkg/lib/errors instead." or
-	// "Using universe.Destroy is dangerous, proceed with care.".
-	message string
-	// filenameFilter is a filename-filter which must match before this lint
-	// error will be reported.  If nil, errors will be reported in all files
-	// (equivalent to a filter that always returns true).
+	nameRegexp     *regexp.Regexp
 	filenameFilter _filenameFilter
-	// objectFilter is a filter which must match the symbol-use before
-	// this lint error will be reported.  It can do any checking on
-	// the symbol (as a types.Object object) that it wants.  If nil, we
-	// won't do any object-checking on the symbol.
-	objectFilter _objectFilter
+	objectFilter   _objectFilter
+	name           string
+	message        string
 }
 
 // The list of symbols to ban.
@@ -394,5 +380,6 @@ func _run(pass *analysis.Pass) (interface{}, error) {
 			pass.Reportf(use.Pos(), banned.message)
 		}
 	}
+
 	return nil, nil
 }

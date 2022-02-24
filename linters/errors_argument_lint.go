@@ -47,6 +47,7 @@ func _importsKaErrors(file *ast.File) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -73,6 +74,7 @@ func _scrapeParamaterListForLocalVariables(
 			}
 		}
 	}
+
 	return localVariables
 }
 
@@ -90,6 +92,7 @@ func _scrapeAssignmentForLocalVariables(
 			localVariables = append(localVariables, lintutil.ObjectFor(v, pass.TypesInfo))
 		}
 	}
+
 	return localVariables
 }
 
@@ -117,6 +120,7 @@ func _expressionIsLocalVariable(
 	case *ast.IndexExpr: // when we have v[i], we want v and not i
 		return _expressionIsLocalVariable(pass, n.X, localVariables)
 	}
+
 	return false
 }
 
@@ -153,6 +157,7 @@ func _inspectFunction(pass *analysis.Pass, node ast.Node) {
 					localVariables, lintutil.ObjectFor(n.Key, pass.TypesInfo))
 			}
 		}
+
 		return true
 	})
 
@@ -169,28 +174,46 @@ func _inspectFunction(pass *analysis.Pass, node ast.Node) {
 		}
 		err := callExpr.Args[0]
 		target := callExpr.Args[1]
-		if name == "github.com/Khan/webapp/pkg/lib/errors.Is" ||
-			name == "errors.Is" {
-			if !_expressionIsLocalVariable(pass, err, localVariables) {
-				pass.Reportf(err.Pos(), "First argument to errors.Is needs to be a local variable")
-			}
+		switch name {
+		case "github.com/Khan/webapp/pkg/lib/errors.Is", "errors.Is":
+			{
+				if !_expressionIsLocalVariable(pass, err, localVariables) {
+					pass.Reportf(
+						err.Pos(),
+						"First argument to errors.Is needs to be a local variable",
+					)
+				}
 
-			if _expressionIsLocalVariable(pass, target, localVariables) {
-				pass.Reportf(target.Pos(), "Second argument to errors.Is cannot be a local variable")
+				if _expressionIsLocalVariable(pass, target, localVariables) {
+					pass.Reportf(
+						target.Pos(),
+						"Second argument to errors.Is cannot be a local variable",
+					)
+				}
 			}
-		} else if name == "github.com/Khan/webapp/pkg/lib/errors.As" || name == "errors.As" {
-			if !_expressionIsLocalVariable(pass, err, localVariables) {
-				pass.Reportf(err.Pos(), "First argument to errors.As needs to be a local variable")
-			}
-			// error.As is a bit different. The second argument is only allowed
-			// to be a reference to a variable, we don't care about scope.
-			// TODO (jeremygervais): We're just checking if we are taking
-			// the ref of something here. Not that the something is a
-			// pointer already or if it's even an error. We can do better!
-			if _, ok := target.(*ast.UnaryExpr); !ok {
-				pass.Reportf(callExpr.Args[1].Pos(), "The second argument of errors.As must take the reference to an object")
+		case "github.com/Khan/webapp/pkg/lib/errors.As", "errors.As":
+			{
+				if !_expressionIsLocalVariable(pass, err, localVariables) {
+					pass.Reportf(
+						err.Pos(),
+						"First argument to errors.As needs to be a local variable",
+					)
+				}
+				// error.As is a bit different. The second argument is only
+				// allowed to be a reference to a variable, we don't care
+				// about scope.
+				// TODO (jeremygervais): We're just checking if we are taking
+				// the ref of something here. Not that the something is a
+				// pointer already or if it's even an error. We can do better!
+				if _, ok := target.(*ast.UnaryExpr); !ok {
+					pass.Reportf(
+						callExpr.Args[1].Pos(),
+						"The second argument of errors.As must take the reference to an object",
+					)
+				}
 			}
 		}
+
 		return true
 	})
 }
@@ -225,5 +248,6 @@ func _runErrorsArgument(pass *analysis.Pass) (interface{}, error) {
 			}
 		}
 	}
+
 	return nil, nil
 }

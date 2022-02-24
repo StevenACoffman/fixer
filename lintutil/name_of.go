@@ -34,6 +34,7 @@ func ObjectFor(node ast.Node, typesInfo *types.Info) types.Object {
 		if sel, ok := typesInfo.Selections[node]; ok {
 			return sel.Obj()
 		}
+
 		return typesInfo.Uses[node.Sel]
 	// TODO(benkraft): This is incomplete; we should check typesInfo.Types and
 	// perhaps typesInfo.Implicits.  Nothing we do needs those yet.
@@ -61,6 +62,7 @@ func NameOf(obj types.Object) string {
 		if pkg == nil {
 			return obj.Name()
 		}
+
 		return pkg.Path() + "." + obj.Name()
 	}
 
@@ -74,6 +76,7 @@ func NameOf(obj types.Object) string {
 			// TODO(benkraft): Handle struct fields.
 			return ""
 		}
+
 		return qualifiedName(obj)
 	case *types.Func:
 		return obj.FullName()
@@ -106,5 +109,6 @@ func TypeIs(typ types.Type, pkgPath string, name string) bool {
 	if named.Obj().Pkg() == nil {
 		return pkgPath == ""
 	}
+
 	return named.Obj().Pkg().Path() == pkgPath
 }

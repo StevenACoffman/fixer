@@ -60,9 +60,11 @@ func _runHTTPReturn(pass *analysis.Pass) (interface{}, error) {
 			case *ast.FuncLit:
 				_checkCFG(pass, cfgs.FuncLit(node))
 			}
+
 			return true // always recurse
 		})
 	}
+
 	return nil, nil
 }
 
@@ -123,6 +125,7 @@ func _mustReturnAfter(pass *analysis.Pass, node ast.Node) *ast.Ident {
 			case "net/http.Error", "net/http.Redirect":
 				ret = node
 			}
+
 			return false // nowhere to recurse
 		case *ast.FuncLit:
 			return false // has its own CFG analyzed separately.
@@ -130,5 +133,6 @@ func _mustReturnAfter(pass *analysis.Pass, node ast.Node) *ast.Ident {
 			return true // otherwise, recurse
 		}
 	})
+
 	return ret
 }

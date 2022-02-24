@@ -77,6 +77,7 @@ func _hasPermissionCheckDirective(comment *ast.CommentGroup) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -122,6 +123,7 @@ func _markPermissionCheckers(pass *analysis.Pass) {
 					}
 				}
 			}
+
 			return true
 		})
 	}
@@ -173,6 +175,7 @@ func _findResolvers(pass *analysis.Pass) []resolver {
 			}
 		}
 	}
+
 	return retval
 }
 
@@ -193,6 +196,7 @@ func _hasPermissionCheck(pass *analysis.Pass, funcDecl *ast.FuncDecl) bool {
 
 		return false // nothing to recurse on
 	})
+
 	return foundCheck
 }
 

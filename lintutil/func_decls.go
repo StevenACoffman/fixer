@@ -20,6 +20,7 @@ func FilterFuncs(files []*ast.File, predicate func(*ast.FuncDecl) bool) []*ast.F
 			}
 		}
 	}
+
 	return retval
 }
 
@@ -35,6 +36,7 @@ func ReceiversByType(files []*ast.File, typesInfo *types.Info) map[types.Type][]
 		typ := UnwrapMaybePointer(typesInfo.TypeOf(recv.Recv.List[0].Type))
 		retval[typ] = append(retval[typ], recv)
 	}
+
 	return retval
 }
 
@@ -65,8 +67,10 @@ func CallsSuper(funcDecl *ast.FuncDecl, typesInfo *types.Info) bool {
 			return true
 		}
 		foundSuper = true
+
 		return false // no need to recurse here
 	})
+
 	return foundSuper
 }
 
@@ -122,5 +126,6 @@ func IsResolverFunc(funcDecl *ast.FuncDecl, typesInfo *types.Info) bool {
 			return true
 		}
 	}
+
 	return false
 }

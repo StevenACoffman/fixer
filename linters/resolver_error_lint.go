@@ -59,6 +59,7 @@ func _errorResultIndex(sig *ast.FuncType) int {
 			i++
 		}
 	}
+
 	return -1
 }
 
@@ -94,8 +95,10 @@ func _lintResolverErrors(pass *analysis.Pass, resolver *ast.FuncDecl) {
 							"per ADR-303; use an error-field instead")
 				}
 			}
+
 			return false // no need to recurse, we can't nest return statements
 		}
+
 		return true // otherwise, recurse
 	})
 }

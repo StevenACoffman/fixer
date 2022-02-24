@@ -50,13 +50,9 @@ var JSONTagAnalyzer = &analysis.Analyzer{
 // like json.Marshal.  These are typically in the encoding/json package, but in
 // theory could be elsewhere, say if we start using a third-party JSON library.
 type _jsonifyingFunction struct {
-	name     string // as determined by lintutil.NameOf
-	argIndex int    // index of the argument that's encoded or decoded into
-	// marshaler is the unqualified name of the unmarshaler/marshaler interface
-	// this function may use, depending whether it's encoding or decoding.
-	// It's assumed (by getMarshalInterface()) that this belongs to the same
-	// package as the function itself.
+	name      string
 	marshaler string
+	argIndex  int
 }
 
 // Given the package in which this jsonifier is defined, return the actual
@@ -76,15 +72,16 @@ func (jsonifier _jsonifyingFunction) getMarshalInterface(pkg *types.Package) *ty
 		panic(fmt.Sprintf("marshaler %v.%v is %T, not interface",
 			pkg.Path(), jsonifier.marshaler, underlyingType))
 	}
+
 	return underlyingInterface
 }
 
 var _jsonifyingFunctions = []_jsonifyingFunction{
-	{"encoding/json.Marshal", 0, "Marshaler"},
-	{"encoding/json.MarshalIndent", 0, "Marshaler"},
-	{"encoding/json.Unmarshal", 1, "Unmarshaler"},
-	{"(*encoding/json.Decoder).Decode", 0, "Unmarshaler"},
-	{"(*encoding/json.Encoder).Encode", 0, "Marshaler"},
+	{"encoding/json.Marshal", "Marshaler", 0},
+	{"encoding/json.MarshalIndent", "Marshaler", 0},
+	{"encoding/json.Unmarshal", "Unmarshaler", 1},
+	{"(*encoding/json.Decoder).Decode", "Unmarshaler", 0},
+	{"(*encoding/json.Encoder).Encode", "Marshaler", 0},
 }
 
 var _jsonifyingFunctionsByName = map[string]_jsonifyingFunction{}
@@ -129,9 +126,11 @@ func _getJSONifiedValues(pass *analysis.Pass) []_jsonifiedValue {
 				typ:              pass.TypesInfo.TypeOf(arg),
 				marshalInterface: jsonifier.getMarshalInterface(funcObj.Pkg()),
 			})
+
 			return true
 		})
 	}
+
 	return retval
 }
 
@@ -156,6 +155,7 @@ func (s *stringStack) pop() string {
 	}
 
 	s.length--
+
 	return s.buf[s.length]
 }
 
@@ -261,7 +261,7 @@ func (analyzer *_typeAnalyzer) run(typ types.Type) []string {
 			// then when we JSONify we'll get a single object with keys "a" and
 			// "b".  We need to recurse through U, to check that B has a struct
 			// tag.  But we don't need U itself to have a struct tag.
-			case !ok && !(isStruct && field.Embedded()):
+			case !ok && (!isStruct || !field.Embedded()):
 				complain(field.Name())
 			case tag == "-":
 				continue // ignored by json, no need to recurse

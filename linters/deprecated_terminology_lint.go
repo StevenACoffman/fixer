@@ -150,6 +150,7 @@ func (t *_term) _matches(words []string) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -159,6 +160,7 @@ func (t *_term) isOKMatch(words []string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -175,6 +177,7 @@ func (t *_term) isContainedIn(words []string) bool {
 			}
 		}
 	}
+
 	return false
 }
 
@@ -207,6 +210,7 @@ func (t *_term) isOKWithin(okWithin ...string) *_term {
 	for i, s := range okWithin {
 		t.okWithin[i] = _term{words: _words(s)}
 	}
+
 	return t
 }
 
@@ -216,6 +220,7 @@ func (t *_term) isAllowedInFiles(relpaths ...string) *_term {
 	for i, path := range relpaths {
 		t.allowedAbspaths[i] = lib.KARootJoin(ctx, path)
 	}
+
 	return t
 }
 
@@ -231,6 +236,7 @@ func (t *_term) isAllowedInDirectories(relpaths ...string) *_term {
 		// other directories that have the given directory name as a prefix.
 		t.allowedDirsAbspaths[i] = lib.KARootJoin(ctx, path) + "/"
 	}
+
 	return t
 }
 

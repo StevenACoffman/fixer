@@ -44,6 +44,7 @@ func _checkFunction(pass *analysis.Pass, cachedFn ast.Expr, cachedFns map[types.
 		// precise if it comes up.
 		pass.Reportf(cachedFn.Pos(),
 			"argument to cache.Cache must be a named function")
+
 		return
 	}
 	if fnObj.Pkg() != pass.Pkg {
@@ -52,6 +53,7 @@ func _checkFunction(pass *analysis.Pass, cachedFn ast.Expr, cachedFns map[types.
 		// else is doing so, so we just forbid it.
 		pass.Reportf(cachedFn.Pos(),
 			"don't cache functions in another package directly (define a wrapper)")
+
 		return
 	}
 
@@ -60,6 +62,7 @@ func _checkFunction(pass *analysis.Pass, cachedFn ast.Expr, cachedFns map[types.
 		pass.Reportf(cachedFn.Pos(),
 			"don't call cache.Cache on the same function twice "+
 				"(other call at %v)", pass.Fset.Position(otherFn.Pos()))
+
 		return
 	}
 	cachedFns[fnObj] = cachedFn
@@ -95,6 +98,7 @@ func _checkCacheOrder(pass *analysis.Pass, options []ast.Expr) {
 
 		if len(call.Args) != 1 { // (shouldn't happen in type-checked code)
 			pass.Reportf(call.Pos(), "invalid call to cache.In (should have 1 argument)")
+
 			return
 		}
 
@@ -142,13 +146,16 @@ func _runCache(pass *analysis.Pass) (interface{}, error) {
 
 			if len(call.Args) == 0 { // (shouldn't happen in type-checked code)
 				pass.Reportf(call.Pos(), "invalid call to cache.Cache (no arguments)")
+
 				return true
 			}
 
 			_checkFunction(pass, call.Args[0], cachedFns)
 			_checkCacheOrder(pass, call.Args[1:])
+
 			return true
 		})
 	}
+
 	return nil, nil
 }

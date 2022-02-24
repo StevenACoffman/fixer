@@ -1,71 +1,76 @@
+// fixer will run linters and apply suggested fixes
 package main
 
 import (
-	"github.com/StevenACoffman/fixer/linters"
-	"golang.org/x/tools/go/analysis"
-	"golang.org/x/tools/go/analysis/multichecker"
-	"golang.org/x/tools/go/analysis/passes/fieldalignment"
-	"golang.org/x/tools/go/analysis/passes/sigchanyzer"
-	"honnef.co/go/tools/quickfix"
+	"flag"
 	"os"
 	"strings"
+
+	// One offs
+	"github.com/Djarvur/go-err113"
+	"github.com/kyoh86/exportloopref"
+	"github.com/nishanths/exhaustive"
+
+	// ruleguard "github.com/quasilyte/go-ruleguard/analyzer" // ruleguard
+	// needs a file or something?
+	"github.com/ssgreg/nlreturn/v2/pkg/nlreturn"
+	"golang.org/x/tools/go/analysis"
+	"golang.org/x/tools/go/analysis/multichecker"
 
 	// Vet checks.
 	"golang.org/x/tools/go/analysis/passes/asmdecl"
 	"golang.org/x/tools/go/analysis/passes/assign"
 	"golang.org/x/tools/go/analysis/passes/atomic"
+
+	// Additional checks in x/tools
+	"golang.org/x/tools/go/analysis/passes/atomicalign"
 	"golang.org/x/tools/go/analysis/passes/bools"
 	"golang.org/x/tools/go/analysis/passes/buildtag"
 	"golang.org/x/tools/go/analysis/passes/cgocall"
 	"golang.org/x/tools/go/analysis/passes/copylock"
+	"golang.org/x/tools/go/analysis/passes/deepequalerrors"
 	"golang.org/x/tools/go/analysis/passes/errorsas"
+	"golang.org/x/tools/go/analysis/passes/fieldalignment"
 	"golang.org/x/tools/go/analysis/passes/httpresponse"
+	"golang.org/x/tools/go/analysis/passes/ifaceassert"
 	"golang.org/x/tools/go/analysis/passes/loopclosure"
 	"golang.org/x/tools/go/analysis/passes/lostcancel"
 	"golang.org/x/tools/go/analysis/passes/nilfunc"
+	"golang.org/x/tools/go/analysis/passes/nilness"
 	"golang.org/x/tools/go/analysis/passes/printf"
 	"golang.org/x/tools/go/analysis/passes/shift"
+	"golang.org/x/tools/go/analysis/passes/sigchanyzer"
+	"golang.org/x/tools/go/analysis/passes/sortslice"
 	"golang.org/x/tools/go/analysis/passes/stdmethods"
+	"golang.org/x/tools/go/analysis/passes/stringintconv"
 	"golang.org/x/tools/go/analysis/passes/structtag"
+	"golang.org/x/tools/go/analysis/passes/testinggoroutine"
 	"golang.org/x/tools/go/analysis/passes/tests"
 	"golang.org/x/tools/go/analysis/passes/unmarshal"
 	"golang.org/x/tools/go/analysis/passes/unreachable"
 	"golang.org/x/tools/go/analysis/passes/unsafeptr"
 	"golang.org/x/tools/go/analysis/passes/unusedresult"
 
-	// Additional checks in x/tools
-	"golang.org/x/tools/go/analysis/passes/atomicalign"
-	"golang.org/x/tools/go/analysis/passes/deepequalerrors"
-	"golang.org/x/tools/go/analysis/passes/ifaceassert"
-	"golang.org/x/tools/go/analysis/passes/nilness"
-	"golang.org/x/tools/go/analysis/passes/sortslice"
-	"golang.org/x/tools/go/analysis/passes/stringintconv"
-	"golang.org/x/tools/go/analysis/passes/testinggoroutine"
-
 	// Staticcheck
 	"honnef.co/go/tools/config"
+	"honnef.co/go/tools/quickfix"
 	"honnef.co/go/tools/simple"
 	"honnef.co/go/tools/staticcheck"
 	"honnef.co/go/tools/stylecheck"
 
-	// One offs
-	"github.com/Djarvur/go-err113"
-	"github.com/kyoh86/exportloopref"
-	"github.com/nishanths/exhaustive"
-	// ruleguard "github.com/quasilyte/go-ruleguard/analyzer" // ruleguard needs a file or something?
-	"github.com/ssgreg/nlreturn/v2/pkg/nlreturn"
+	"github.com/StevenACoffman/fixer/linters"
 )
 
 func main() {
-
 	var runKhan bool
+	flag.BoolVar(&runKhan, "khan", false, "run khan specific linters")
 	for _, a := range os.Args[1:] {
 		if strings.HasPrefix(a, "-khan") {
 			runKhan = true
 		}
 	}
 	// Most of these linters do NOT have suggested fixes BTW.
-	var checks = []*analysis.Analyzer{
+	checks := []*analysis.Analyzer{
 		// All cmd/vet analyzers.
 		asmdecl.Analyzer,
 		assign.Analyzer,
@@ -97,7 +102,8 @@ func main() {
 		ifaceassert.Analyzer,
 		nilness.Analyzer,
 		sigchanyzer.Analyzer,
-		//shadow.Analyzer, // check for possible unintended shadowing of variables
+		// shadow.Analyzer, // check for possible unintended shadowing of
+		// variables
 		sortslice.Analyzer,
 		stringintconv.Analyzer,
 		testinggoroutine.Analyzer,
@@ -110,8 +116,28 @@ func main() {
 		// ruleguard.Analyzer, // requires a dsl file
 	}
 	if runKhan {
+		// Linters with suggested fixes
 		checks = append(checks, linters.ErrorsWrapStacktraceAnalyzer)
 		checks = append(checks, linters.LinewrapAnalyzer)
+
+		// Linters that only whine and complain without suggesting fixes
+		checks = append(checks, linters.ImportAnalyzer)
+		checks = append(checks, linters.AlwaysCloseAnalyzer)
+		checks = append(checks, linters.BannedSymbolAnalyzer)
+		checks = append(checks, linters.CacheAnalyzer)
+		checks = append(checks, linters.CompareAnalyzer)
+		checks = append(checks, linters.DeprecatedTerminologyAnalyzer)
+		checks = append(checks, linters.DocumentationAnalyzer)
+		checks = append(checks, linters.ErrorArgumentAnalyzer)
+		checks = append(checks, linters.ErrorsWrapAnalyzer)
+		checks = append(checks, linters.GraphQLAnalyzer)
+		checks = append(checks, linters.GraphQLLintAnalyzer)
+		checks = append(checks, linters.GraphQLTestAnalyzer)
+		checks = append(checks, linters.HTTPReturnAnalyzer)
+		checks = append(checks, linters.JSONTagAnalyzer)
+		checks = append(checks, linters.PermissionsAnalyzer)
+		checks = append(checks, linters.ResolverErrorAnalyzer)
+		checks = append(checks, linters.VisibilityAnalyzer)
 	}
 	config.DefaultConfig.Initialisms = append(config.DefaultConfig.Initialisms, "ISO")
 
@@ -126,7 +152,8 @@ func main() {
 		checks = append(checks, v.Analyzer)
 	}
 	for _, v := range stylecheck.Analyzers {
-		// - At least one file in a non-main package should have a package comment
+		// - At least one file in a non-main package should have a package
+		// comment
 		// - The comment should be of the form "Package x ..."
 		if v.Analyzer.Name == "ST1000" {
 			continue

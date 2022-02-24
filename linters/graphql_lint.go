@@ -44,6 +44,7 @@ func (op GraphQLOperation) String() string {
 	if op.Error != "" {
 		return "error: " + op.Error
 	}
+
 	return "opname: " + op.OpName
 }
 
@@ -89,6 +90,7 @@ func _runGraphQL(pass *analysis.Pass) (interface{}, error) {
 						"error: unable to get GraphQL opname: only %v arguments found",
 						len(call.Args)),
 				})
+
 				return true
 			}
 
@@ -145,6 +147,7 @@ func _runGraphQLLint(pass *analysis.Pass) (interface{}, error) {
 			pass.Report(analysis.Diagnostic{Pos: op.Call.Pos(), Message: op.Error})
 		}
 	}
+
 	return nil, nil
 }
 
@@ -161,5 +164,6 @@ func _runGraphQLTest(pass *analysis.Pass) (interface{}, error) {
 		// For tests, we export everything so we can test it all at once.
 		pass.Report(analysis.Diagnostic{Pos: op.Call.Pos(), Message: op.String()})
 	}
+
 	return nil, nil
 }

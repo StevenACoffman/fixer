@@ -64,5 +64,6 @@ func KARootJoin(ctx context.Context, elem ...string) string {
 	if len(elem) > 0 && filepath.IsAbs(elem[0]) {
 		return filepath.Join(elem...)
 	}
+
 	return filepath.Join(append([]string{KARoot(ctx)}, elem...)...)
 }

@@ -46,6 +46,7 @@ func _isGeneratedComment(comment *ast.CommentGroup) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -66,6 +67,7 @@ func _isEntirelyGenerated(pass *analysis.Pass) bool {
 			return false
 		}
 	}
+
 	return true
 }
 

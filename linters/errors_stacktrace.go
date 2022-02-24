@@ -39,6 +39,7 @@ func _isASentinel(obj types.Object, sentinels []types.Object) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -139,7 +140,12 @@ func _handleErrorIdent(
 ) {
 	obj := lintutil.ObjectFor(errReturn, pass.TypesInfo)
 	if ast.IsExported(lintutil.NameOf(obj)) {
-		_reportWithEdit(pass, file, errReturn, "You must wrap errors that are exported with errors.Wrap() before you return them.")
+		_reportWithEdit(
+			pass,
+			file,
+			errReturn,
+			"You must wrap errors that are exported with errors.Wrap() before you return them.",
+		)
 	} else if _, found := requiresWrapping[obj]; found {
 		_reportWithEdit(pass, file, errReturn, "You must wrap errors that are from non-KA code with errors.Wrap() before you return them.")
 	} else if _isASentinel(obj, sentinels) {
@@ -156,6 +162,7 @@ func _handleErrorIdent(
 func _callExprErrorsRequireWrapping(pass *analysis.Pass, caller *ast.CallExpr) bool {
 	funcObj := lintutil.ObjectFor(caller.Fun, pass.TypesInfo)
 	funcName := lintutil.NameOf(funcObj)
+
 	return !strings.Contains(funcName, "github.com/Khan/webapp/") &&
 		funcName != "fmt.Errorf" &&
 		funcName != "(github.com/stretchr/testify/mock.Arguments).Error"
@@ -248,6 +255,7 @@ func _checkFunctionDeclaration(
 		case *ast.AssignStmt:
 			_handleAssignment(pass, stmt, errorsRequiredWrapping)
 		}
+
 		return true
 	})
 }
@@ -275,6 +283,7 @@ func getSentinels(pass *analysis.Pass, file *ast.File) []types.Object {
 			}
 		}
 	}
+
 	return sentinels
 }
 
@@ -300,5 +309,6 @@ func _runErrorsWrapStacktraceCorrect(pass *analysis.Pass) (interface{}, error) {
 			}
 		}
 	}
+
 	return nil, nil
 }

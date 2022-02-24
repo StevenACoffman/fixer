@@ -52,6 +52,7 @@ func _isClosable(obj types.Object) bool {
 	}
 
 	method, _, _ := types.LookupFieldOrMethod(obj.Type(), true, nil, "Close")
+
 	return method != nil && _isCloseMethod(method)
 }
 
@@ -77,6 +78,7 @@ func _assignedFromNoOp(rhs []ast.Expr, i int) bool {
 	if !ok {
 		return false
 	}
+
 	return sel.Sel.Name == "NopCloser"
 }
 
@@ -97,6 +99,7 @@ func _identFromExpression(e ast.Expr) *ast.Ident {
 	case *ast.KeyValueExpr:
 		return _identFromExpression(i.Value)
 	}
+
 	return nil
 }
 
@@ -106,6 +109,7 @@ func _isCallToCloser(pass *analysis.Pass, callExpr *ast.CallExpr) bool {
 		return false
 	}
 	obj := lintutil.ObjectFor(ident, pass.TypesInfo)
+
 	return pass.ImportObjectFact(obj, new(_isCloser))
 }
 
@@ -122,6 +126,7 @@ func _scanFuncDecl(pass *analysis.Pass, funcDecl *ast.FuncDecl) {
 				}
 			}
 		}
+
 		return true
 	})
 
@@ -168,6 +173,7 @@ func _scanFuncDecl(pass *analysis.Pass, funcDecl *ast.FuncDecl) {
 				}
 			}
 		}
+
 		return true
 	})
 
@@ -209,5 +215,6 @@ func _runAlwaysClose(pass *analysis.Pass) (interface{}, error) {
 			}
 		}
 	}
+
 	return nil, nil
 }
