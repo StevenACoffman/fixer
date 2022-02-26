@@ -6,7 +6,8 @@ fixer -fix ./...
 
 golangci-lint does not currently support applying suggested fixes per https://github.com/golangci/golangci-lint/issues/1779
 
-So this just does that for us.
+So this just does that for us. There are a number of Khan-specific linters (written by my co-workers)
+which can be enabled via `-khan`, so `fixer -khan -fix ./...`
 
 Current golangci-linters that support `SuggestedFixes`:
 - `goerr113` https://github.com/Djarvur/go-err113
