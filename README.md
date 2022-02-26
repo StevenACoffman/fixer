@@ -1,6 +1,10 @@
-### Fixer
+### Fixer - Apply All Linter Suggested Fixes at once
+```
+go install github.com/StevenACoffman/fixer@latest
+fixer -fix ./...
+```
 
-golangci-lint does not support applying suggested fixes per https://github.com/golangci/golangci-lint/issues/1779
+golangci-lint does not currently support applying suggested fixes per https://github.com/golangci/golangci-lint/issues/1779
 
 So this just does that for us.
 

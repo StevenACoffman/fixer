@@ -11,7 +11,6 @@ import (
 	"github.com/kyoh86/exportloopref"
 	"github.com/nishanths/exhaustive"
 
-	// ruleguard "github.com/quasilyte/go-ruleguard/analyzer" // ruleguard
 	// needs a file or something?
 	"github.com/ssgreg/nlreturn/v2/pkg/nlreturn"
 	"golang.org/x/tools/go/analysis"
@@ -116,11 +115,18 @@ func main() {
 		// ruleguard.Analyzer, // requires a dsl file
 	}
 	if runKhan {
-		// Linters with suggested fixes
+		// Linters with politely suggested fixes
 		checks = append(checks, linters.ErrorsWrapStacktraceAnalyzer)
 		checks = append(checks, linters.LinewrapAnalyzer)
 
 		// Linters that only whine and complain without suggesting fixes
+		checks = append(checks, linters.ModelAnalyzer)
+		checks = append(checks, linters.NotFoundAnalyzer)
+		checks = append(checks, linters.UserLockModelAnalyzer)
+		checks = append(checks, linters.LogAnalyzer)
+		checks = append(checks, linters.LogOrReturnErrorAnalyzer)
+		checks = append(checks, linters.KAContextInterfaceAnalyzer)
+		checks = append(checks, linters.KAContextAnalyzer)
 		checks = append(checks, linters.ImportAnalyzer)
 		checks = append(checks, linters.AlwaysCloseAnalyzer)
 		checks = append(checks, linters.BannedSymbolAnalyzer)
@@ -176,19 +182,19 @@ func main() {
 	}
 
 	// Add -fix unless already given.
-	var has bool
-	for _, a := range os.Args[1:] {
-		if strings.HasPrefix(a, "-fix") {
-			has = true
-
-			break
-		}
-	}
-	if !has {
-		os.Args = append(
-			[]string{os.Args[0], "-fix"},
-			os.Args[1:]...)
-	}
+	//var has bool
+	//for _, a := range os.Args[1:] {
+	//	if strings.HasPrefix(a, "-fix") {
+	//		has = true
+	//
+	//		break
+	//	}
+	//}
+	//if !has {
+	//	os.Args = append(
+	//		[]string{os.Args[0], "-fix"},
+	//		os.Args[1:]...)
+	//}
 
 	multichecker.Main(checks...)
 }
