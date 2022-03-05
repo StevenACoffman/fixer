@@ -132,7 +132,7 @@ func main() {
 		checks = append(checks, linters.BannedSymbolAnalyzer)
 		checks = append(checks, linters.CacheAnalyzer)
 		checks = append(checks, linters.CompareAnalyzer)
-		checks = append(checks, linters.DeprecatedTerminologyAnalyzer)
+		// checks = append(checks, linters.DeprecatedTerminologyAnalyzer) // Deprecated Terminology requires webapp files
 		checks = append(checks, linters.DocumentationAnalyzer)
 		checks = append(checks, linters.ErrorArgumentAnalyzer)
 		checks = append(checks, linters.ErrorsWrapAnalyzer)

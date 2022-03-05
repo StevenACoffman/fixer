@@ -115,7 +115,16 @@ func (f *_file) NumLines() (int, error) {
 	return len(f.lines), nil
 }
 
-// Line returns the given line number in f, starting at line 1.
+// LineEnd points to the newline at the end of the line (or the end
+// of the file if the file doesn't end in a newline).
+func (f *_file) LineEnd(lineNumber int) token.Pos {
+	if lineNumber+1 < len(f.lines)-1 {
+		// If there's a next line, replace up to the start of that.
+		return f.LineStart(lineNumber+1) - 1
+	}
+	return f.AstFile.End()
+}
+
 func (f *_file) LineText(lineNumber int) (string, error) {
 	err := f.cacheFile()
 	if err != nil {
@@ -149,14 +158,7 @@ func _diagnostic(
 	}
 	if len(replacement) > 0 {
 		startPos := file.LineStart(startLine)
-		var endPos token.Pos
-		if endLine < len(file.lines)-1 {
-			// If there's a next line, replace up to the start of that.
-			endPos = file.LineStart(endLine + 1)
-		} else {
-			// Otherwise, replace to the end of the file.
-			endPos = file.AstFile.End()
-		}
+		endPos := file.LineEnd(endLine) + 1
 		// We have to add trailing newlines to each replacement line.
 		newText := []byte(strings.Join(replacement, "\n") + "\n")
 		suggestedFix := analysis.SuggestedFix{
@@ -465,23 +467,13 @@ func _getFuncIssue(
 		newLines = append(newLines, "\t"+lineText)
 	}
 
-	// We want to include here: a) the closing paren of the function
-	// declaration, b) the whole return type, and c) the opening brace
-	// of the function body.  (a) and (b) are simple.  We get (c) by
-	// looking for the opening brace of the body, and then going
-	// forward until the newline (or non-whitespace char).
-	bodyOffset := file.Offset(funcDecl.Body.Lbrace)
-	bodyBraceLine := file.Position(funcDecl.Body.Lbrace).Line
-	for bodyOffset++; bodyOffset < file.Size(); bodyOffset++ {
-		if file.Position(file.Pos(bodyOffset)).Line > bodyBraceLine {
-			break
-		}
-		// TODO(csilvers): find all unicode whitespace, not just space and tab
-		if file.contents[bodyOffset] != ' ' && file.contents[bodyOffset] != '\t' {
-			break
-		}
-	}
-	lastLine, err := file.Range(params.Closing, file.Pos(bodyOffset))
+	// TODO(csilvers): also reformat the return types if they are too
+	// long.  (Useful for this is params.Closing and
+	// funcDecl.Body.Lbrace.)  But for now we take everything from the
+	// closing paren of the function declaration to the end of the
+	// line, and put it in as our last-line.  Maybe we should also have a
+	// TODO(csilvers): break up `func foo(...) { on same line }`.
+	lastLine, err := file.Range(params.Closing, file.LineEnd(endLine))
 	if err != nil {
 		return nil, -1, fmt.Errorf("%w", err)
 	}
